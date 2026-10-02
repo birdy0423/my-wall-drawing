@@ -1,7 +1,9 @@
 # My Wall Drawing
 
-Collaborative 1920 x 1080 drawing canvas with WebSocket relay and asynchronous AI stories.
+Live drawing canvas: [my-wall-drawing.onrender.com](https://my-wall-drawing.onrender.com/).
 
-Source for the project owner's Render service. See [deployment instructions](DEPLOY_RENDER.md).
+Collaborative 1920 x 1080 drawing canvas with independent WebSocket send queues and asynchronous AI stories.
 
-Drawing works without an OpenAI key. Configure OPENAI_API_KEY privately in the service environment to enable stories.
+Drawing works without an OpenAI key. Configure OPENAI_API_KEY privately in the Render service environment to enable stories. Never commit credentials.
+
+See [deployment instructions](DEPLOY_RENDER.md).
