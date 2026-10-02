@@ -1,0 +1,14 @@
+# Drawing service in the project owner's Render workspace.
+services:
+  - type: web
+    name: my-wall-drawing
+    runtime: python
+    region: singapore
+    plan: free
+    healthCheckPath: /healthz
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server_qr:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+# Render supplies PORT and RENDER_EXTERNAL_URL. Never commit API keys.

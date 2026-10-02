@@ -1,0 +1,343 @@
+
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>多人畫畫同步</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #222;
+  color: #fff;
+  font-family: sans-serif;
+  overflow: hidden;
+}
+
+#canvas {
+  display: block;
+  background: #fff;
+  touch-action: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#leftTools {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 12px;
+  background: rgba(30,30,40,0.82);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+  transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+  border-right: 1px solid rgba(255,255,255,0.08);
+}
+
+#leftTools.closed {
+  transform: translateX(-200px);
+}
+
+#rightTools {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 12px;
+  background: rgba(30,30,40,0.82);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+  transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+  border-left: 1px solid rgba(255,255,255,0.08);
+}
+
+#rightTools.closed {
+  transform: translateX(160px);
+}
+
+#leftHandle {
+  position: fixed;
+  left: 200px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 100px;
+  background: rgba(90,70,200,0.8);
+  border-radius: 0 18px 18px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 101;
+  transition: left 0.28s cubic-bezier(.4,0,.2,1);
+  font-size: 20px;
+  color: #fff;
+  user-select: none;
+}
+
+#leftHandle.closed {
+  left: 0;
+}
+
+#leftHandle .arrow {
+  transition: transform 0.25s;
+  display: inline-block;
+}
+
+#leftHandle.closed .arrow {
+  transform: scaleX(-1);
+}
+
+#rightHandle {
+  position: fixed;
+  right: 160px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 100px;
+  background: rgba(90,70,200,0.8);
+  border-radius: 18px 0 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 101;
+  transition: right 0.28s cubic-bezier(.4,0,.2,1);
+  font-size: 20px;
+  color: #fff;
+  user-select: none;
+}
+
+#rightHandle.closed {
+  right: 0;
+}
+
+#rightHandle .arrow {
+  transition: transform 0.25s;
+  display: inline-block;
+}
+
+#rightHandle.closed .arrow {
+  transform: scaleX(-1);
+}
+
+.tool-btn {
+  width: 100%;
+  min-height: 58px;
+  border: none;
+  border-radius: 12px;
+  font-size: 22px;
+  cursor: pointer;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  transition: background 0.15s;
+  text-align: left;
+  padding: 8px 12px;
+}
+
+.tool-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.tool-btn.active {
+  background: rgba(90,70,200,0.6);
+}
+
+input[type=color] {
+  width: 100%;
+  height: 52px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 4px;
+  background: rgba(255,255,255,0.1);
+}
+
+input[type=range] {
+  width: 100%;
+  accent-color: #6450c8;
+}
+
+.section-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  padding: 2px 0 0 2px;
+}
+
+#langToggle {
+  background: rgba(255,255,255,0.9);
+  color: #000;
+  font-weight: bold;
+}
+
+#themeText {
+  font-size: 20px;
+  text-align: center;
+  color: #fff;
+  font-weight: bold;
+  word-break: break-all;
+  padding: 4px;
+}
+
+#qrCode {
+  width: 110px;
+  height: 110px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+#storyBox {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 40%;
+  overflow: auto;
+  background: rgba(0,0,0,0.88);
+  color: #fff;
+  padding: 24px 32px;
+  font-size: 36px;
+  display: none;
+  line-height: 1.8;
+  z-index: 200;
+}
+/* 返回主頁按鈕 */
+#closeWebsite {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 300;
+
+  padding: 12px 18px;
+  border: none;
+  border-radius: 12px;
+
+  background: rgba(220, 60, 60, 0.9);
+  color: #fff;
+
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transition: background 0.15s, transform 0.15s;
+}
+
+#closeWebsite:hover {
+  background: rgba(240, 70, 70, 1);
+  transform: scale(1.05);
+}
+
+#closeWebsite:active {
+  transform: scale(0.95);
+}
+</style>
+</head>
+
+<body>
+<button id="closeWebsite">✕ 關閉網站</button>
+<div id="leftTools">
+
+  <div class="section-label">工具</div>
+
+  <button class="tool-btn" id="pen">
+    ✏️ 筆刷
+  </button>
+
+  <button class="tool-btn" id="eraser">
+    🧽 橡皮擦
+  </button>
+
+  <div class="section-label">顏色</div>
+
+  <input type="color" id="colorPicker" value="#000000">
+
+  <div class="section-label">筆刷大小</div>
+
+  <input
+    type="range"
+    id="sizePicker"
+    min="2"
+    max="40"
+    value="5"
+  >
+
+  <button class="tool-btn" id="clear">
+    🗑️ 清除
+  </button>
+
+  <button class="tool-btn" id="save">
+    💾 儲存
+  </button>
+
+</div>
+
+<div id="leftHandle">
+  <span class="arrow">&#x276E;</span>
+</div>
+
+
+<div id="rightTools">
+
+  <button class="tool-btn" id="aiTheme">
+    🎲 主題
+  </button>
+
+  <button class="tool-btn" id="aiStory">
+    📖 故事
+  </button>
+
+  <button class="tool-btn" id="langToggle">
+    🌐 中文
+  </button>
+
+  <div id="themeText"></div>
+
+  <canvas id="qrCode"></canvas>
+
+</div>
+
+<div id="rightHandle">
+  <span class="arrow">&#x276F;</span>
+</div>
+
+
+<canvas id="canvas"></canvas>
+
+<div id="storyBox"></div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+<script src="/static/canvas.js?v=wall-sync-20261002-1"></script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
